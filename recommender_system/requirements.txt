@@ -1,0 +1,22 @@
+# Core Dependencies
+numpy
+pandas
+scikit-learn
+
+# Deep Learning & Computer Vision
+torch
+torchvision
+opencv-python
+pillow
+
+# GUI (tkinter usually comes with Python, but may need python3-tk on Linux)
+# On Linux: sudo apt-get install python3-tk
+
+# Optional: For wardrobe upload system integration
+# Uncomment if using the wardrobe upload tab
+ultralytics
+huggingface_hub
+
+# Note: If ultralytics installation fails, you can still use the recommender
+# without the wardrobe upload feature by commenting out ultralytics above
+

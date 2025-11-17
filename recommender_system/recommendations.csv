@@ -1,0 +1,14 @@
+id,gender,masterCategory,subCategory,articleType,baseColour,season,year,usage,productDisplayName,similarity_score,strategy,strategy_weight,weighted_score,recommendation_reason
+6061,Men,Apparel,Topwear,Tshirts,White,Summer,2011.0,Casual,UCB Men's Roundneck With Big Print White T-shirt,0.26700976490974426,similar,0.4,0.10680390596389772,Visually similar to your wardrobe (similarity: 0.27)
+15970,Men,Apparel,Topwear,Shirts,Navy Blue,Fall,2011.0,Casual,Turtle Check Men Navy Blue Shirt,0.5,category_expansion,0.2,0.1,Fills wardrobe gap in Shirts
+59263,Women,Accessories,Watches,Watches,Silver,Winter,2016.0,Casual,Titan Women Silver Watch,0.5,category_expansion,0.2,0.1,Fills wardrobe gap in Watches
+53759,Men,Apparel,Topwear,Tshirts,Grey,Summer,2012.0,Casual,Puma Men Grey T-shirt,0.5,category_expansion,0.2,0.1,Fills wardrobe gap in Tshirts
+1855,Men,Apparel,Topwear,Tshirts,Grey,Summer,2011.0,Casual,Inkfruit Mens Chain Reaction T-shirt,0.5,category_expansion,0.2,0.1,Fills wardrobe gap in Tshirts
+54088,Women,Apparel,Topwear,Tops,Beige,Summer,2012.0,Casual,Mumbai Slang Women Beige Top,0.23645465075969696,similar,0.4,0.09458186030387879,Visually similar to your wardrobe (similarity: 0.24)
+52017,Women,Apparel,Loungewear and Nightwear,Night suits,Black,Summer,2017.0,Casual,Inaya Women Black Pyjama Set,0.21812528371810913,similar,0.4,0.08725011348724365,Visually similar to your wardrobe (similarity: 0.22)
+48094,Women,Apparel,Topwear,Tops,Purple,Summer,2012.0,Casual,French Connection Women Violet Top,0.2135816514492035,similar,0.4,0.08543266057968141,Visually similar to your wardrobe (similarity: 0.21)
+14011,Men,Apparel,Topwear,Tshirts,Black,Fall,2011.0,Casual,Nike Men Printed Black Tshirts,0.2090376317501068,similar,0.4,0.08361505270004273,Visually similar to your wardrobe (similarity: 0.21)
+1790,Unisex,Accessories,Bags,Backpacks,Beige,Fall,2010.0,Sports,Quechua Unisex Ultralight Beige Bag,0.20741315186023712,similar,0.4,0.08296526074409485,Visually similar to your wardrobe (similarity: 0.21)
+24532,Women,Apparel,Topwear,Kurtas,White,Fall,2011.0,Ethnic,Mother Earth Women Off white Kurta,0.20349469780921936,similar,0.4,0.08139787912368775,Visually similar to your wardrobe (similarity: 0.20)
+24405,Women,Apparel,Topwear,Kurtas,Blue,Summer,2012.0,Ethnic,Vishudh Women Blue Printed Kurta,0.20156410336494446,similar,0.4,0.08062564134597779,Visually similar to your wardrobe (similarity: 0.20)
+57066,Women,Apparel,Topwear,Jackets,Pink,Summer,2012.0,Casual,Elle Women Pink Jacket,0.1923789083957672,complementary,0.3,0.057713672518730164,Complements your Jackets
