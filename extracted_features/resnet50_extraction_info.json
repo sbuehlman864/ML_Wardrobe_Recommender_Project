@@ -1,0 +1,19 @@
+{
+  "model_name": "resnet50",
+  "feature_dimension": 2048,
+  "total_images_processed": 41802,
+  "failed_images": 5,
+  "success_rate": 99.98804028033584,
+  "batch_size": 32,
+  "timestamp": "20251110_224143",
+  "features_shape": [
+    41802,
+    2048
+  ],
+  "features_stats": {
+    "mean": 0.38363930583000183,
+    "std": 0.7080554366111755,
+    "min": 0.0,
+    "max": 31.494443893432617
+  }
+}

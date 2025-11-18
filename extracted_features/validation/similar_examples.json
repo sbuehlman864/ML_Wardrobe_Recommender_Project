@@ -1,0 +1,157 @@
+[
+  {
+    "query_id": 11168,
+    "query_category": "Shirts",
+    "similar": [
+      {
+        "id": 11167,
+        "category": "Shirts",
+        "similarity": 0.9999996423721313
+      },
+      {
+        "id": 11165,
+        "category": "Shirts",
+        "similarity": 0.9614265561103821
+      },
+      {
+        "id": 11166,
+        "category": "Shirts",
+        "similarity": 0.9614265561103821
+      },
+      {
+        "id": 12304,
+        "category": "Shirts",
+        "similarity": 0.9584649801254272
+      },
+      {
+        "id": 9648,
+        "category": "Shirts",
+        "similarity": 0.9558071494102478
+      }
+    ]
+  },
+  {
+    "query_id": 35386,
+    "query_category": "Casual Shoes",
+    "similar": [
+      {
+        "id": 26641,
+        "category": "Casual Shoes",
+        "similarity": 0.8112112283706665
+      },
+      {
+        "id": 3821,
+        "category": "Flip Flops",
+        "similarity": 0.805638313293457
+      },
+      {
+        "id": 34823,
+        "category": "Sports Shoes",
+        "similarity": 0.8024393320083618
+      },
+      {
+        "id": 33824,
+        "category": "Sports Shoes",
+        "similarity": 0.8013077974319458
+      },
+      {
+        "id": 31941,
+        "category": "Casual Shoes",
+        "similarity": 0.79972243309021
+      }
+    ]
+  },
+  {
+    "query_id": 30670,
+    "query_category": "Sunglasses",
+    "similar": [
+      {
+        "id": 17314,
+        "category": "Sunglasses",
+        "similarity": 0.9631855487823486
+      },
+      {
+        "id": 17224,
+        "category": "Sunglasses",
+        "similarity": 0.9527930021286011
+      },
+      {
+        "id": 17316,
+        "category": "Sunglasses",
+        "similarity": 0.9504793286323547
+      },
+      {
+        "id": 29873,
+        "category": "Sunglasses",
+        "similarity": 0.9480235576629639
+      },
+      {
+        "id": 17320,
+        "category": "Sunglasses",
+        "similarity": 0.9471349716186523
+      }
+    ]
+  },
+  {
+    "query_id": 34187,
+    "query_category": "Tshirts",
+    "similar": [
+      {
+        "id": 34187,
+        "category": "Tshirts",
+        "similarity": 1.0000001192092896
+      },
+      {
+        "id": 38335,
+        "category": "Tops",
+        "similarity": 0.8782118558883667
+      },
+      {
+        "id": 34260,
+        "category": "Tshirts",
+        "similarity": 0.8481758236885071
+      },
+      {
+        "id": 31102,
+        "category": "Tshirts",
+        "similarity": 0.8481758236885071
+      },
+      {
+        "id": 37532,
+        "category": "Tshirts",
+        "similarity": 0.8474951982498169
+      }
+    ]
+  },
+  {
+    "query_id": 15493,
+    "query_category": "Heels",
+    "similar": [
+      {
+        "id": 15492,
+        "category": "Heels",
+        "similarity": 0.931465744972229
+      },
+      {
+        "id": 15490,
+        "category": "Heels",
+        "similarity": 0.9178677797317505
+      },
+      {
+        "id": 23797,
+        "category": "Heels",
+        "similarity": 0.8978658318519592
+      },
+      {
+        "id": 2895,
+        "category": "Heels",
+        "similarity": 0.8750121593475342
+      },
+      {
+        "id": 15494,
+        "category": "Casual Shoes",
+        "similarity": 0.8725779056549072
+      }
+    ]
+  }
+]

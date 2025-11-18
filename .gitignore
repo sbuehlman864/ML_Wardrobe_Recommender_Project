@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+.Python
+
+# Virtual Environment
+venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+
+# Large Feature Files (>100MB, GitHub limit)
+extracted_features/resnet50_features.npy
+extracted_features/resnet50_features_normalized.npy
+
+# Model files
+*.pkl
+!extracted_features/*.pkl
+
+# Data files
+*.csv.gz
+*.zip
+*.tar.gz
