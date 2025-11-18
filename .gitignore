@@ -19,6 +19,9 @@ env/
 # Large Feature Files (>100MB, GitHub limit)
 extracted_features/resnet50_features.npy
 extracted_features/resnet50_features_normalized.npy
+myenv/
+fashion-product-images-small/
+fashion-product-images-small.zip/
 
 # Model files
 *.pkl

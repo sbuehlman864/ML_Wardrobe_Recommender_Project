@@ -1,0 +1,29 @@
+# Wardrobe storage
+wardrobe_storage/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual environments
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# YOLO models (will be downloaded automatically)
+*.pt
+!yolov8n.pt  # Keep the nano model if needed
+
