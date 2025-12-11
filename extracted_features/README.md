@@ -38,7 +38,7 @@ import pandas as pd
 features = np.load('extracted_features/resnet50_features_pca512.npy')
 metadata = pd.read_csv('extracted_features/resnet50_metadata.csv')
 
-print(f"Features shape: {features.shape}")  # (41802, 512)
+print(f"Features shape: {features.shape}")  # (41801, 512)
 print(f"Total images: {len(metadata)}")
 ```
 

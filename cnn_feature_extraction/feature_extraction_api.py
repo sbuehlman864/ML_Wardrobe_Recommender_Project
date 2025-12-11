@@ -205,11 +205,11 @@ class FeatureExtractionAPI:
         
         # 1. Features (normalized) - for KNN
         np.save(output_path / 'features_normalized.npy', self.precomputed_features['normalized'])
-        print(f"✓ features_normalized.npy - (41802, 2048) for full accuracy")
+        print(f"✓ features_normalized.npy - (41801, 2048) for full accuracy")
         
         # 2. Features (PCA) - for speed
         np.save(output_path / 'features_pca512.npy', self.precomputed_features['pca512'])
-        print(f"✓ features_pca512.npy - (41802, 512) for speed")
+        print(f"✓ features_pca512.npy - (41801, 512) for speed")
         
         # 3. Metadata
         self.metadata.to_csv(output_path / 'metadata.csv', index=False)
