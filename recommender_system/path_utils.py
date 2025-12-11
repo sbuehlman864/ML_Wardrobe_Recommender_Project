@@ -71,12 +71,10 @@ def find_file(filename: str,
     # Default search locations
     if search_dirs is None:
         search_dirs = [
-            relative_to / "extracted_features",
             relative_to / "feature_extraction",
             relative_to / "recommender_system",
             get_recommender_system_dir(),
             Path.cwd(),
-            Path.cwd() / "extracted_features",
             Path.cwd() / "feature_extraction",
         ]
     
@@ -203,8 +201,8 @@ def get_product_images_dir() -> Optional[Path]:
     project_root = get_project_root()
     
     possible_dirs = [
+
         project_root / "fashion-product-images-small" / "images",
-        project_root / "YOLO_training" / "data" / "raw" / "fashion-product-images-small" / "images",
         project_root / "feature_extraction" / "images",
         project_root / "EDA" / "images",
         # Kaggle dataset locations (cross-platform)
@@ -279,6 +277,35 @@ def get_device() -> str:
             return 'cpu'
     except ImportError:
         return 'cpu'
+
+
+def get_faiss_index_dir() -> Path:
+    """
+    Get the FAISS index directory.
+    Creates it if it doesn't exist.
+    
+    Returns:
+        Path to FAISS index directory
+    """
+    index_dir = get_recommender_system_dir() / "faiss_index"
+    index_dir.mkdir(parents=True, exist_ok=True)
+    return index_dir.resolve()
+
+
+def get_user_features_path(user_id: str) -> Path:
+    """
+    Get the path to user features storage.
+    Creates directory if it doesn't exist.
+    
+    Args:
+        user_id: User identifier
+    
+    Returns:
+        Path to user features directory
+    """
+    user_features_dir = get_faiss_index_dir() / "user_features"
+    user_features_dir.mkdir(parents=True, exist_ok=True)
+    return user_features_dir.resolve()
 
 
 if __name__ == "__main__":

@@ -1,0 +1,8 @@
+{
+  "user_id": "user_M",
+  "image_paths": [
+    "/Users/aasrithagopalam/work/ML_Wardrobe_Recommender_Project_copy/recommender_system/wardrobe_storage/user_M/WhatsApp Image 2025-11-17 at 6.46.40 PM.jpg"
+  ],
+  "num_features": 1,
+  "feature_dim": 512
+}

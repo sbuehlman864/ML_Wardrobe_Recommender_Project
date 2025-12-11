@@ -2,142 +2,114 @@
 
 This folder contains the core recommendation system components.
 
+## Quick Start
+
+```bash
+# Install dependencies
+pip install -r requirements.txt
+
+# Run the GUI application
+python wardrobe_recommender_app.py
+
+# Or test the recommender
+python test_recommender.py ../Wardrobe_upload_system/wardrobe_storage/aasritha
+```
+
 ## Components
 
-### 1. `preprocessing.py` - Image Preprocessing
-- Preprocesses images for ResNet50 feature extraction
-- Handles image resizing, normalization, quality checks
-- Supports batch processing
+- `wardrobe_recommender_app.py` - Main GUI application
+- `recommender.py` - Recommendation engine
+- `similarity.py` - Similarity matching
+- `feature_extractor.py` - Feature extraction
+- `preprocessing.py` - Image preprocessing
 
-### 2. `feature_extractor.py` - Feature Extraction
-- Extracts 512-dimensional features from user wardrobe images
-- Uses ResNet50 + PCA (from extracted_features folder)
-- Supports batch processing and folder processing
+## Documentation
 
-### 3. `similarity.py` - Similarity Matching (TODO)
-- Calculates similarity between user wardrobe and products
-- Cosine similarity and other metrics
+📚 **Complete documentation is available in the [docs folder](../docs/recommender_system/):**
 
-### 4. `recommender.py` - Recommendation Engine (TODO)
-- Generates recommendations based on user wardrobe
-- Multiple recommendation strategies
+- [Application Guide](../docs/recommender_system/app_guide.md) - Complete GUI application documentation
+- [Usage Guide](../docs/recommender_system/usage_guide.md) - How to use the recommendation system
+- [Components](../docs/recommender_system/components.md) - Core system components overview
+- [Recommendation Strategies](../docs/recommender_system/recommendation_strategies.md) - Detailed strategy analysis
 
-### 5. `database.py` - Database Operations (TODO)
-- SQLite database for user wardrobe storage
-- CRUD operations for wardrobe items
+## Requirements
 
-## Setup
+See `requirements.txt` for dependencies.
 
-### Install Dependencies
+## FAISS Vector Database
 
-```bash
-pip install torch torchvision pillow numpy pandas
+The recommender system uses FAISS (Facebook AI Similarity Search) for efficient similarity search and feature storage.
+
+### Features
+
+- **Automatic Initialization**: The system automatically checks if a FAISS index exists at startup
+  - If index exists → Loads it (fast startup)
+  - If index doesn't exist but `.npy` file exists → Automatically creates index from `.npy` file
+  - If neither exists → Raises error with helpful message
+- **User Feature Caching**: User wardrobe features are cached in the vector DB for faster subsequent recommendations
+- **Efficient Search**: FAISS provides faster similarity search compared to in-memory NumPy operations
+- **Persistent Storage**: Features are stored on disk, reducing memory usage
+
+### Storage Structure
+
+```
+recommender_system/
+├── faiss_index/
+│   ├── product_index.faiss      # FAISS index for product features
+│   ├── product_ids.pkl          # Mapping of index positions to product IDs
+│   └── user_features/            # User wardrobe features
+│       ├── {user_id}_features.npy
+│       └── {user_id}_metadata.json
 ```
 
-### Download Dataset
+### Usage
 
-``` #!/bin/bash
-curl -L -o ~/Downloads/fashion-product-images-small.zip\
-  https://www.kaggle.com/api/v1/datasets/download/paramaggarwal/fashion-product-images-small ```
+The FAISS vector database is automatically initialized when you create a `Recommender` or `SimilarityMatcher` instance:
 
-### Download ResNet50 Model
-
-If you encounter SSL certificate errors, download the model manually:
-
-```bash
-./download_resnet50.sh
-```
-
-Or fix SSL certificates:
-
-```bash
-./fix_ssl_certificates.sh
-```
-
-## Usage
-
-### Quick Start - Get Recommendations
-
-**Option 1: Test with your wardrobe folder (Recommended)**
-```bash
-python test_recommender.py ../Wardrobe_upload_system/wardrobe_storage/jashwanth
-```
-
-**Option 2: Test with a single image**
-```bash
-python quick_test.py ../Wardrobe_upload_system/wardrobe_storage/jashwanth/image.png
-```
-
-**Option 3: Use in Python code**
 ```python
 from recommender import Recommender
 
-# Initialize
+# FAISS index will be auto-created on first run if .npy file exists
 recommender = Recommender()
-
-# Get recommendations
-recommendations = recommender.get_recommendations(
-    user_wardrobe_paths=[
-        'path/to/image1.jpg',
-        'path/to/image2.jpg'
-    ],
-    strategy='hybrid',  # or 'similar', 'complementary', 'category_expansion'
-    top_k=20
-)
-
-# View results
-print(recommendations[['id', 'articleType', 'baseColour', 'similarity_score']])
 ```
 
-### Extract Features from Single Image
+### Manual Migration
+
+If you want to manually migrate features to FAISS (optional):
 
 ```bash
-python feature_extractor.py path/to/image.jpg
+python migrate_to_faiss.py
 ```
 
-### Extract Features from Wardrobe Folder
+Or with custom paths:
 
-```python
-from feature_extractor import FeatureExtractor
-
-extractor = FeatureExtractor()
-features = extractor.extract_from_wardrobe_folder("../Wardrobe_upload_system/wardrobe_storage/jashwanth")
+```bash
+python migrate_to_faiss.py --npy path/to/features.npy --metadata path/to/metadata.csv
 ```
 
-### Preprocess Image
+### Performance Benefits
 
-```python
-from preprocessing import preprocess_image
+- **Faster Search**: FAISS uses optimized algorithms for similarity search
+- **Reduced Memory**: Index can be memory-mapped, reducing RAM usage
+- **Scalability**: Better performance as dataset grows
+- **Caching**: User features are cached, avoiding redundant extractions
 
-tensor = preprocess_image("path/to/image.jpg")
-```
+### Troubleshooting
 
-## Troubleshooting
+**Q: FAISS index not found error**
+- Ensure `resnet50_features_pca512.npy` exists in `extracted_features/` directory
+- The index will be created automatically on first run
 
-### SSL Certificate Error
+**Q: How to rebuild the index?**
+- Delete `faiss_index/product_index.faiss` and `faiss_index/product_ids.pkl`
+- Restart the application - index will be recreated automatically
 
-If you get SSL certificate errors when downloading ResNet50:
+**Q: User features not being cached?**
+- Ensure `user_id` is provided when calling `get_recommendations()`
+- Check that `faiss_index/user_features/` directory is writable
 
-1. **Quick fix**: Run `./download_resnet50.sh` to download manually
-2. **Permanent fix**: Run `./fix_ssl_certificates.sh` or install certificates manually
+### Backward Compatibility
 
-### Model Not Found
-
-If the model can't be loaded:
-
-1. Check if model exists: `ls ~/.cache/torch/hub/checkpoints/resnet50-0676ba61.pth`
-2. If not, run: `./download_resnet50.sh`
-3. The code will automatically use the cached model if available
-
-### PCA Model Not Found
-
-Ensure `resnet50_pca512_model.pkl` exists in `../extracted_features/` folder.
-
-## Next Steps
-
-- [ ] Implement similarity matching
-- [ ] Build recommendation engine
-- [ ] Set up database
-- [ ] Create API endpoints
-- [ ] Build web interface
-
+The system maintains backward compatibility:
+- If FAISS is not available or index creation fails, it falls back to NumPy-based similarity
+- Both methods produce the same results (within numerical precision)

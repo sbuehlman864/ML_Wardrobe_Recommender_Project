@@ -2,6 +2,8 @@
 numpy
 pandas
 scikit-learn
+faiss-cpu
+matplotlib
 
 # Deep Learning & Computer Vision
 torch

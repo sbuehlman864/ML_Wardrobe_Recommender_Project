@@ -1,0 +1,9 @@
+{
+  "silhouette_score": 0.12773093581199646,
+  "davies_bouldin_score": 2.4554699454167244,
+  "category_purity": 0.6065,
+  "color_purity": 0.25,
+  "avg_intra_cluster_sim": 0.4850621223449707,
+  "avg_inter_cluster_sim": -0.031204650178551674,
+  "n_clusters": 20
+}

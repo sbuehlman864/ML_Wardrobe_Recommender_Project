@@ -12,6 +12,7 @@ import sys
 from pathlib import Path
 import pandas as pd
 from datetime import datetime
+from typing import Optional
 
 # Add parent directory to path for imports
 current_dir = Path(__file__).parent.absolute()
@@ -180,71 +181,16 @@ class WardrobeUploadTab:
             self.on_user_selected()
     
     def create_new_user(self):
-        """Create a new user with name and gender"""
-        # Create a dialog window for name and gender
-        dialog = tk.Toplevel(self.parent)
-        dialog.title("Create New User")
-        dialog.geometry("400x200")
-        dialog.transient(self.parent)
-        dialog.grab_set()
-        
-        # Center the dialog
-        dialog.update_idletasks()
-        x = (dialog.winfo_screenwidth() // 2) - (dialog.winfo_width() // 2)
-        y = (dialog.winfo_screenheight() // 2) - (dialog.winfo_height() // 2)
-        dialog.geometry(f"+{x}+{y}")
-        
-        # Name field
-        ttk.Label(dialog, text="Enter user name:").pack(pady=10)
-        name_var = tk.StringVar()
-        name_entry = ttk.Entry(dialog, textvariable=name_var, width=30)
-        name_entry.pack(pady=5)
-        name_entry.focus()
-        
-        # Gender field
-        ttk.Label(dialog, text="Select gender:").pack(pady=10)
-        gender_var = tk.StringVar(value="M")
-        gender_frame = ttk.Frame(dialog)
-        gender_frame.pack(pady=5)
-        ttk.Radiobutton(gender_frame, text="Male (M)", variable=gender_var, value="M").pack(side=tk.LEFT, padx=10)
-        ttk.Radiobutton(gender_frame, text="Female (F)", variable=gender_var, value="F").pack(side=tk.LEFT, padx=10)
-        
-        result = [None]  # Use list to store result from nested function
-        
-        def create_user():
-            name = name_var.get().strip()
-            gender = gender_var.get()
-            
-            if not name:
-                messagebox.showwarning("Warning", "Please enter a user name")
-                return
-            
-            # Create name with gender suffix
-            name_with_gender = f"{name}_{gender}"
-            user_dir = os.path.join(self.wardrobe_storage_dir, name_with_gender)
+        """Create a new user"""
+        name = tk.simpledialog.askstring("New User", "Enter user name:")
+        if name and name.strip():
+            name = name.strip()
+            user_dir = os.path.join(self.wardrobe_storage_dir, name)
             os.makedirs(user_dir, exist_ok=True)
-            
-            result[0] = name_with_gender
-            dialog.destroy()
-        
-        # Buttons
-        button_frame = ttk.Frame(dialog)
-        button_frame.pack(pady=20)
-        ttk.Button(button_frame, text="Create", command=create_user).pack(side=tk.LEFT, padx=5)
-        ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
-        
-        # Bind Enter key to create
-        name_entry.bind("<Return>", lambda e: create_user())
-        
-        # Wait for dialog to close
-        dialog.wait_window()
-        
-        if result[0]:
-            name_with_gender = result[0]
             self.refresh_user_list()
-            self.user_var.set(name_with_gender)
+            self.user_var.set(name)
             self.on_user_selected()
-            messagebox.showinfo("Success", f"User '{name_with_gender}' created!")
+            messagebox.showinfo("Success", f"User '{name}' created!")
     
     def on_user_selected(self, event=None):
         """Handle user selection"""
@@ -254,24 +200,11 @@ class WardrobeUploadTab:
             if os.path.exists(user_dir):
                 # Count images
                 images = list(Path(user_dir).glob("*.jpg")) + list(Path(user_dir).glob("*.png"))
-                
-                # Extract gender from user name
-                gender = self._extract_gender_from_name(user)
-                gender_display = f"Gender: {gender}" if gender else ""
-                
                 self.user_info_label.config(
-                    text=f"User: {user}\n{gender_display}\nImages: {len(images)}",
+                    text=f"User: {user}\nImages: {len(images)}",
                     foreground="black"
                 )
                 self.update_wardrobe_preview(user_dir)
-    
-    def _extract_gender_from_name(self, name):
-        """Extract gender from user name (format: name_M or name_F)"""
-        if name.endswith("_M"):
-            return "Male (M)"
-        elif name.endswith("_F"):
-            return "Female (F)"
-        return None
     
     def update_wardrobe_preview(self, user_dir):
         """Update wardrobe preview list"""
@@ -435,7 +368,7 @@ class RecommendationsTab:
                     "- resnet50_features_pca512.npy\n"
                     "- resnet50_metadata.csv\n\n"
                     "Please run feature extraction first:\n"
-                    "cd extracted_features\n"
+                    "cd feature_extraction\n"
                     "python feature_extractor.py"
                 )
             else:
@@ -558,24 +491,30 @@ class RecommendationsTab:
             user_dir = os.path.join(self.wardrobe_storage_dir, user)
             if os.path.exists(user_dir):
                 images = list(Path(user_dir).glob("*.jpg")) + list(Path(user_dir).glob("*.png"))
-                gender = self._extract_gender_from_name(user)
-                gender_display = f" | Gender: {gender}" if gender else ""
-                self.status_label.config(text=f"User: {user}{gender_display} | {len(images)} images in wardrobe")
+                self.status_label.config(text=f"User: {user} | {len(images)} images in wardrobe")
     
-    def _extract_gender_from_name(self, name):
-        """Extract gender from user name (format: name_M or name_F)"""
-        if name.endswith("_M"):
-            return "Male (M)"
-        elif name.endswith("_F"):
-            return "Female (F)"
-        return None
-    
-    def _get_gender_filter(self, name):
-        """Get gender filter value for recommender (M->'Men', F->'Women')"""
-        if name.endswith("_M"):
-            return "Men"
-        elif name.endswith("_F"):
-            return "Women"
+    def infer_gender_from_user_id(self, user_id: str) -> Optional[str]:
+        """
+        Infer gender from user ID.
+        Looks for patterns like:
+        - _F, _Female, _f, _female -> Women
+        - _M, _Male, _m, _male -> Men
+        - Case-insensitive matching
+        """
+        if not user_id:
+            return None
+        
+        user_id_lower = user_id.lower()
+        
+        # Check for female indicators
+        if any(indicator in user_id_lower for indicator in ['_f', '_female', 'f_', 'female_']):
+            return 'Women'
+        
+        # Check for male indicators
+        if any(indicator in user_id_lower for indicator in ['_m', '_male', 'm_', 'male_']):
+            return 'Men'
+        
+        # If no clear indicator, return None (no filter will be applied)
         return None
     
     def get_recommendations(self):
@@ -617,19 +556,19 @@ class RecommendationsTab:
             strategy = self.strategy_var.get()
             top_k = int(self.top_k_var.get())
             
-            # Extract gender from user name and create filter
-            gender_filter_value = self._get_gender_filter(user)
+            # Infer gender from user ID and create filters
+            inferred_gender = self.infer_gender_from_user_id(user)
             filters = None
-            if gender_filter_value:
-                filters = {'gender': [gender_filter_value]}
-                self.status_label.config(text=f"Getting recommendations (filtered for {gender_filter_value})...")
-                self.parent.update()
+            if inferred_gender:
+                filters = {'gender': [inferred_gender]}
+                print(f"Inferred gender for user '{user}': {inferred_gender}")
             
             recommendations = self.recommender.get_recommendations(
                 user_wardrobe_paths=image_paths,
                 strategy=strategy,
                 top_k=top_k,
-                filters=filters
+                filters=filters,  # Pass gender filter
+                user_id=user  # Pass user_id for feature caching
             )
             
             self.current_recommendations = recommendations
@@ -645,7 +584,7 @@ class RecommendationsTab:
                     "Please ensure feature extraction is complete:\n"
                     "- resnet50_features_pca512.npy\n"
                     "- resnet50_metadata.csv\n\n"
-                    "Run: cd extracted_features && python feature_extractor.py"
+                    "Run: cd feature_extraction && python feature_extractor.py"
                 )
             else:
                 detailed_msg = f"File not found: {error_msg}"

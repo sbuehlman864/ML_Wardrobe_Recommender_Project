@@ -8,6 +8,7 @@ import pandas as pd
 from typing import List, Dict, Optional, Tuple
 from similarity import SimilarityMatcher
 from feature_extractor import FeatureExtractor
+from vector_db import VectorDB
 import os
 
 class Recommender:
@@ -15,16 +16,31 @@ class Recommender:
     
     def __init__(self,
                  feature_extractor: Optional[FeatureExtractor] = None,
-                 similarity_matcher: Optional[SimilarityMatcher] = None):
+                 similarity_matcher: Optional[SimilarityMatcher] = None,
+                 vector_db: Optional[VectorDB] = None):
         """
         Initialize recommender.
         
         Args:
             feature_extractor: FeatureExtractor instance (creates if None)
             similarity_matcher: SimilarityMatcher instance (creates if None)
+            vector_db: Optional VectorDB instance (creates if None)
         """
-        self.feature_extractor = feature_extractor or FeatureExtractor()
-        self.similarity_matcher = similarity_matcher or SimilarityMatcher()
+        # Initialize VectorDB (will auto-create index if needed)
+        try:
+            self.vector_db = vector_db or VectorDB(auto_init=True)
+        except (FileNotFoundError, ImportError) as e:
+            print(f"Warning: VectorDB initialization failed: {e}")
+            print("Falling back to NumPy-based similarity")
+            self.vector_db = None
+        
+        # Initialize components with VectorDB
+        if self.vector_db and self.vector_db.is_initialized():
+            self.feature_extractor = feature_extractor or FeatureExtractor(vector_db=self.vector_db)
+            self.similarity_matcher = similarity_matcher or SimilarityMatcher(vector_db=self.vector_db)
+        else:
+            self.feature_extractor = feature_extractor or FeatureExtractor()
+            self.similarity_matcher = similarity_matcher or SimilarityMatcher()
         
         print("✓ Recommender initialized")
     
@@ -33,7 +49,8 @@ class Recommender:
                            strategy: str = 'hybrid',
                            top_k: int = 20,
                            filters: Optional[Dict] = None,
-                           weights: Optional[Dict[str, float]] = None) -> pd.DataFrame:
+                           weights: Optional[Dict[str, float]] = None,
+                           user_id: Optional[str] = None) -> pd.DataFrame:
         """
         Get recommendations based on user's wardrobe.
         
@@ -51,6 +68,7 @@ class Recommender:
                 - complementary: Weight for complementary items (default: 0.3)
                 - category_expansion: Weight for category expansion (default: 0.2)
                 - diversity: Weight for diversity boost (default: 0.1)
+            user_id: Optional user ID for caching features in vector DB
         
         Returns:
             DataFrame with recommendations and scores
@@ -58,9 +76,24 @@ class Recommender:
         if not user_wardrobe_paths:
             raise ValueError("User wardrobe paths cannot be empty")
         
-        # Extract features from user wardrobe
+        # Extract user_id from paths if not provided
+        if user_id is None:
+            # Try to infer from path structure (e.g., .../wardrobe_storage/user_id/image.jpg)
+            for path in user_wardrobe_paths:
+                path_parts = os.path.normpath(path).split(os.sep)
+                if 'wardrobe_storage' in path_parts:
+                    idx = path_parts.index('wardrobe_storage')
+                    if idx + 1 < len(path_parts):
+                        user_id = path_parts[idx + 1]
+                        break
+        
+        # Extract features from user wardrobe (will use cache if available)
         print(f"Extracting features from {len(user_wardrobe_paths)} wardrobe items...")
-        user_features = self.feature_extractor.batch_extract_features(user_wardrobe_paths)
+        user_features = self.feature_extractor.batch_extract_features(
+            user_wardrobe_paths,
+            user_id=user_id,
+            save_to_db=(self.vector_db is not None and user_id is not None)
+        )
         
         # Get metadata for user wardrobe (if available)
         # For now, we'll infer from filenames or use defaults
@@ -97,7 +130,7 @@ class Recommender:
                                     filters: Optional[Dict]) -> pd.DataFrame:
         """Get visually similar recommendations"""
         return self.similarity_matcher.find_similar_products(
-            user_features, top_k=top_k, filters=filters
+            user_features, top_k=top_k, filters=filters, diversity=True
         )
     
     def _get_complementary_recommendations(self,
@@ -110,6 +143,11 @@ class Recommender:
             user_features, user_metadata, top_k=top_k, filters=filters
         )
         
+        # Apply additional filters if provided (as backup, though filters should already be applied)
+        if filters:
+            mask = self._apply_filters(results, filters)
+            results = results[mask]
+        
         return results.head(top_k)
     
     def _get_category_expansion_recommendations(self,
@@ -120,6 +158,11 @@ class Recommender:
         results = self.similarity_matcher.find_by_category_expansion(
             user_metadata, top_k=top_k, filters=filters
         )
+        
+        # Apply additional filters if provided (as backup, though filters should already be applied)
+        if filters:
+            mask = self._apply_filters(results, filters)
+            results = results[mask]
         
         return results.head(top_k)
     
@@ -195,32 +238,63 @@ class Recommender:
         return diverse_results.head(top_k)
     
     def _ensure_diversity(self, results: pd.DataFrame, top_k: int) -> pd.DataFrame:
-        """Ensure recommendations are diverse across categories"""
+        """Ensure recommendations are diverse across categories with randomization"""
         if len(results) <= top_k:
             return results
         
-        diverse = []
-        categories_seen = set()
-        max_per_category = max(1, top_k // 5)  # Max items per category
+        # Add small random perturbation to weighted scores for variety
+        results = results.copy()
+        if 'weighted_score' in results.columns:
+            max_score = results['weighted_score'].max()
+            np.random.seed()  # Use current time as seed for variety
+            noise = np.random.normal(0, max_score * 0.02, len(results))  # 2% noise
+            results['diversity_score'] = results['weighted_score'] + noise
+        else:
+            # Fallback to similarity score
+            max_score = results['similarity_score'].max() if 'similarity_score' in results.columns else 1.0
+            np.random.seed()
+            noise = np.random.normal(0, max_score * 0.02, len(results))
+            results['diversity_score'] = results.get('similarity_score', 0.5) + noise
         
-        for _, row in results.iterrows():
-            category = row.get('articleType', 'Unknown')
+        # Sort by diversity score (original score + noise)
+        results_sorted = results.sort_values('diversity_score', ascending=False)
+        
+        diverse = []
+        category_counts = {}
+        max_per_category = max(1, top_k // 4)  # Max items per category (4 categories)
+        
+        for _, row in results_sorted.iterrows():
+            category = str(row.get('articleType', 'Unknown'))
+            category_count = category_counts.get(category, 0)
             
-            # Add if category not seen too many times
-            if category not in categories_seen or \
-               len([r for r in diverse if r.get('articleType') == category]) < max_per_category:
-                diverse.append(row)
-                categories_seen.add(category)
+            # Add if category not seen too many times, or if we need more items
+            if category_count < max_per_category or len(diverse) < top_k // 2:
+                # Convert Series to dict to ensure consistent data type
+                diverse.append(row.to_dict())
+                category_counts[category] = category_count + 1
             
             if len(diverse) >= top_k:
                 break
         
         # Fill remaining slots with best remaining items
         if len(diverse) < top_k:
-            remaining = results[~results['id'].isin([r['id'] for r in diverse])]
+            selected_ids = {r.get('id') for r in diverse}
+            remaining = results_sorted[~results_sorted['id'].isin(selected_ids)]
             diverse.extend(remaining.head(top_k - len(diverse)).to_dict('records'))
         
-        return pd.DataFrame(diverse)
+        # All items should now be dictionaries, so DataFrame creation should work
+        diverse_df = pd.DataFrame(diverse)
+        # Re-sort by original weighted score or similarity score
+        if 'weighted_score' in diverse_df.columns:
+            diverse_df = diverse_df.sort_values('weighted_score', ascending=False)
+        elif 'similarity_score' in diverse_df.columns:
+            diverse_df = diverse_df.sort_values('similarity_score', ascending=False)
+        
+        # Remove temporary diversity_score column
+        if 'diversity_score' in diverse_df.columns:
+            diverse_df = diverse_df.drop('diversity_score', axis=1)
+        
+        return diverse_df.head(top_k)
     
     def _infer_wardrobe_metadata(self, wardrobe_paths: List[str]) -> pd.DataFrame:
         """Infer metadata from wardrobe image paths/filenames"""
@@ -283,9 +357,24 @@ class Recommender:
     
     def get_complementary_items(self,
                                user_wardrobe_paths: List[str],
-                               top_k: int = 10) -> pd.DataFrame:
+                               top_k: int = 10,
+                               user_id: Optional[str] = None) -> pd.DataFrame:
         """Get complementary items for user's wardrobe"""
-        user_features = self.feature_extractor.batch_extract_features(user_wardrobe_paths)
+        # Extract user_id from paths if not provided
+        if user_id is None:
+            for path in user_wardrobe_paths:
+                path_parts = os.path.normpath(path).split(os.sep)
+                if 'wardrobe_storage' in path_parts:
+                    idx = path_parts.index('wardrobe_storage')
+                    if idx + 1 < len(path_parts):
+                        user_id = path_parts[idx + 1]
+                        break
+        
+        user_features = self.feature_extractor.batch_extract_features(
+            user_wardrobe_paths,
+            user_id=user_id,
+            save_to_db=(self.vector_db is not None and user_id is not None)
+        )
         user_metadata = self._infer_wardrobe_metadata(user_wardrobe_paths)
         
         return self.similarity_matcher.find_complementary_products(
@@ -368,5 +457,5 @@ if __name__ == "__main__":
         print("\n✓ Recommendation test successful!")
     else:
         print("Usage: python recommender.py <wardrobe_folder>")
-        print("Example: python recommender.py ../Wardrobe_upload_system/wardrobe_storage/jashwanth")
+        print("Example: python recommender.py ../Wardrobe_upload_system/wardrobe_storage/aasritha")
 

@@ -1,0 +1,8 @@
+{
+  "overall_color_match_rate": 0.3306818181818182,
+  "median_color_match_rate": 0.2,
+  "overall_color_diversity": 0.30568181818181817,
+  "avg_similarity_matching": 0.665174693951098,
+  "avg_similarity_nonmatching": 0.6424163348790963,
+  "n_colors_tested": 44
+}

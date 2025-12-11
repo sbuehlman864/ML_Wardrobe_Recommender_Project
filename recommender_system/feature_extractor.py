@@ -13,6 +13,10 @@ from pathlib import Path
 from typing import Union, List, Optional
 from preprocessing import preprocess_image, batch_preprocess_images
 from path_utils import find_file, get_device
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from vector_db import VectorDB
 
 
 class FeatureExtractor:
@@ -20,13 +24,15 @@ class FeatureExtractor:
     
     def __init__(self, 
                  pca_model_path: str = "../extracted_features/resnet50_pca512_model.pkl",
-                 device: Optional[str] = None):
+                 device: Optional[str] = None,
+                 vector_db: Optional['VectorDB'] = None):
         """
         Initialize feature extractor.
         
         Args:
             pca_model_path: Path to trained PCA model
             device: Device to use ('cuda', 'mps', 'cpu'). Auto-detects if None
+            vector_db: Optional VectorDB instance for caching user features
         """
         # Detect device
         if device is None:
@@ -43,6 +49,9 @@ class FeatureExtractor:
         
         # Load PCA model
         self.pca_model = self._load_pca_model(pca_model_path)
+        
+        # Store vector DB for caching
+        self.vector_db = vector_db
         
         print("✓ Feature extractor initialized")
     
@@ -190,16 +199,33 @@ class FeatureExtractor:
         
         return features_512
     
-    def batch_extract_features(self, image_paths: List[str]) -> np.ndarray:
+    def batch_extract_features(self, 
+                              image_paths: List[str],
+                              user_id: Optional[str] = None,
+                              save_to_db: bool = True) -> np.ndarray:
         """
         Extract features from multiple images in batch.
         
         Args:
             image_paths: List of image file paths
+            user_id: Optional user ID for caching features in vector DB
+            save_to_db: If True and vector_db is available, save features to DB
         
         Returns:
             Array of 512-dimensional feature vectors (N x 512)
         """
+        # Check if features exist in vector DB
+        if user_id and self.vector_db and save_to_db:
+            cached_features = self.vector_db.get_user_features(user_id)
+            cached_metadata = self.vector_db.get_user_metadata(user_id)
+            
+            if cached_features is not None and cached_metadata is not None:
+                # Check if image paths match
+                cached_paths = cached_metadata.get('image_paths', [])
+                if set(cached_paths) == set(image_paths):
+                    print(f"Using cached features for user: {user_id}")
+                    return cached_features
+        
         # Preprocess all images
         batch_tensor = batch_preprocess_images(image_paths)
         batch_tensor = batch_tensor.to(self.device)
@@ -222,7 +248,31 @@ class FeatureExtractor:
         # Apply PCA
         features_512 = self.pca_model.transform(features_2048)
         
+        # Save to vector DB if requested
+        if user_id and self.vector_db and save_to_db:
+            try:
+                self.vector_db.add_user_features(user_id, features_512, image_paths)
+                print(f"Cached features for user: {user_id}")
+            except Exception as e:
+                print(f"Warning: Could not cache features: {e}")
+        
         return features_512
+    
+    def has_cached_features(self, user_id: str) -> bool:
+        """
+        Check if user features are cached in vector DB.
+        
+        Args:
+            user_id: User identifier
+        
+        Returns:
+            True if cached features exist, False otherwise
+        """
+        if self.vector_db is None:
+            return False
+        
+        cached_features = self.vector_db.get_user_features(user_id)
+        return cached_features is not None
     
     def extract_from_wardrobe_folder(self, wardrobe_folder: str) -> dict:
         """

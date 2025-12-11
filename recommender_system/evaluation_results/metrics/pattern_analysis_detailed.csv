@@ -1,0 +1,5 @@
+pattern_type,preservation_rate,pattern_diversity,avg_similarity,n_recommendations
+Solid,0.25,0.15,0.5781658083200455,20
+Striped,0.9,0.1,0.8279354482889175,20
+Printed,0.5,0.15,0.6528356224298477,20
+Patterned,0.1,0.1,0.6622859388589859,20

@@ -1,0 +1,8 @@
+{
+  "avg_item_diversity": 1.0,
+  "avg_category_diversity": 0.10099999999999999,
+  "avg_color_diversity": 0.31600000000000006,
+  "avg_overlap_jaccard": 0.0003608564029616661,
+  "max_overlap": 0.08108108108108109,
+  "n_queries_tested": 50
+}
